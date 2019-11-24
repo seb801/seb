@@ -1,0 +1,50 @@
+#1
+install.packages("rvest")
+library(selectr)
+library(xml2)
+library(rvest)
+url='http://www.jobkorea.co.kr/Salary/Index?coKeyword=&tabindex=1&indsCtgrCode=10002&indsCode=1000011&jobTypeCode=&haveAGI=0&orderCode=2&coPage=1#salarySearchCompany'
+
+page=1:3
+pages=paste0(url, page, sep='')
+
+extract = function(page_url) {
+  html <- read_html(page_url) 
+  list <- html%>%html_nodes("#listCompany")
+  li <- list %>% html_nodes("li") 
+  text <- li %>% html_text() 
+  text1 <- gsub("(\r)(\n)(\t)*", "", text)
+  df<- as.data.frame(matrix(text1, nrow=30, ncol=8, byrow=TRUE))
+}
+
+# method 1
+mat <- extract(pages[1])
+for(i in 2:length(page) ) mat <- rbind(mat, extract(pages[i]))
+
+# method 2  
+result <- lapply(pages, extract)
+do.call(rbind, result)
+
+#2
+
+url2='http://www.jobkorea.co.kr/Salary/57109'
+html <- read_html(url2)
+link <- html%>%html_nodes('.header')%>%html_nodes('a')%>%html_attr('href')
+dataIdx <- gsub("<a.*dataIdx=|&.*", "", link)
+dataIdx <- dataIdx[c(TRUE, FALSE)]
+dataIdx
+
+#3
+url.sample='http://www.jobkorea.co.kr/Salary/57109'
+detail <- function(url) {
+  html <- read_html(url)
+  table <- html %>% html_nodes(".salary-table col-2")
+  table.list = list()
+  text <-  table%>% html_nodes("div")%>% html_text()
+  text <- gsub("(\r)(\n)(\t)*", "", text)  
+  text <- gsub("(\t)*", "", text)  
+  table.list = append(table.list, list(text))
+  return(table.list)
+}
+detail(url.sample)
+
